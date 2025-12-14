@@ -12,9 +12,7 @@ const app = express();
 /* ======================
    MIDDLEWARES
 ====================== */
-app.use(cors({
-  origin: "http://localhost:5173" // React frontend
-}));
+app.use(cors()); // ✅ FIXED
 app.use(express.json());
 
 /* ======================
@@ -43,7 +41,6 @@ app.post("/generate-certificate", async (req, res) => {
       });
     }
 
-    // 1️⃣ Generate certificate (JPG + PDF)
     const files = await generateCertificate({
       name,
       gst,
@@ -51,7 +48,6 @@ app.post("/generate-certificate", async (req, res) => {
       businessAddress
     });
 
-    // 2️⃣ Send email with attachments
     await sendEmail(email, files);
 
     return res.status(200).json({
