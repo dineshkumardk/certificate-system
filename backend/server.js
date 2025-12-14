@@ -61,7 +61,7 @@ app.post("/generate-certificate", async (req, res) => {
   } catch (error) {
     console.error("ERROR:", error);
     return res.status(500).json({
-      message: "Failed to generate or send certificate"
+      message: error.message || "Email sending failed"
     });
   }
 });
