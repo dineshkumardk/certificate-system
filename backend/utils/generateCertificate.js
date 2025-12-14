@@ -1,9 +1,19 @@
 const fs = require("fs");
 const path = require("path");
-const { createCanvas, loadImage } = require("canvas");
+const { createCanvas, loadImage, registerFont } = require("canvas");
 const PDFDocument = require("pdfkit");
 
-/* Wrap long address */
+/* =========================
+   REGISTER FONT (CRITICAL)
+========================= */
+registerFont(
+  path.join(__dirname, "../fonts/Roboto-Regular.ttf"),
+  { family: "Roboto" }
+);
+
+/* =========================
+   WRAP LONG ADDRESS
+========================= */
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const words = text.split(" ");
   let line = "";
@@ -33,7 +43,9 @@ async function generateCertificate({
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  /* Background */
+  /* =========================
+     BACKGROUND IMAGE
+  ========================= */
   const bg = await loadImage(
     path.join(__dirname, "../templates/certificate-bg.png")
   );
@@ -42,28 +54,28 @@ async function generateCertificate({
   ctx.fillStyle = "#2b2b2b";
   ctx.textAlign = "center";
 
-  /* =====================
-     NAME (MOVED DOWN)
-  ===================== */
-  ctx.font = "bold 46px serif";
+  /* =========================
+     NAME
+  ========================= */
+  ctx.font = "bold 46px Roboto";
   ctx.fillText(name, width / 2, 340);
 
-  /* =====================
-     BUSINESS NAME     
-  ===================== */
-  ctx.font = "bold 28px Arial";
+  /* =========================
+     BUSINESS NAME
+  ========================= */
+  ctx.font = "bold 28px Roboto";
   ctx.fillText(businessName, width / 2, 420);
 
-  /* =====================
-     GST 
-  ===================== */
-  ctx.font = "22px Arial";
+  /* =========================
+     GST
+  ========================= */
+  ctx.font = "22px Roboto";
   ctx.fillText(`GST Number: ${gst}`, width / 2, 460);
 
-  /* =====================
-     ADDRESS 
-  ===================== */
-  ctx.font = "20px Arial";
+  /* =========================
+     ADDRESS
+  ========================= */
+  ctx.font = "20px Roboto";
   wrapText(
     ctx,
     `Address: ${businessAddress}`,
@@ -73,11 +85,11 @@ async function generateCertificate({
     28
   );
 
-  /* =====================
+  /* =========================
      CERTIFICATE NO (LEFT)
-  ===================== */
+  ========================= */
   ctx.textAlign = "left";
-  ctx.font = "18px Arial";
+  ctx.font = "18px Roboto";
 
   const certificateNo =
     "CERT-" + Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -85,9 +97,9 @@ async function generateCertificate({
   ctx.fillText("Certificate No.", 90, 720);
   ctx.fillText(certificateNo, 90, 745);
 
-  /* =====================
+  /* =========================
      ISSUE DATE (RIGHT)
-  ===================== */
+  ========================= */
   ctx.fillText("Issue Date:", width - 300, 720);
   ctx.fillText(
     new Date().toLocaleDateString("en-IN", {
@@ -99,22 +111,15 @@ async function generateCertificate({
     745
   );
 
-  /* =====================
-     SAVE FILES
-  ===================== */
+  /* =========================
+     SAVE FILES (CLOUD SAFE)
+  ========================= */
+  const outputDir = "/tmp/certificates";
+  fs.mkdirSync(outputDir, { recursive: true });
+
   const fileName = `${Date.now()}_${name.replace(/\s+/g, "_")}`;
-
-  const jpgPath = path.join(
-    __dirname,
-    "../generated/certificates",
-    `${fileName}.jpg`
-  );
-
-  const pdfPath = path.join(
-    __dirname,
-    "../generated/certificates",
-    `${fileName}.pdf`
-  );
+  const jpgPath = `${outputDir}/${fileName}.jpg`;
+  const pdfPath = `${outputDir}/${fileName}.pdf`;
 
   fs.writeFileSync(jpgPath, canvas.toBuffer("image/jpeg"));
 
