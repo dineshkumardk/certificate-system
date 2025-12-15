@@ -1,38 +1,38 @@
 const fs = require("fs");
-const sgMail = require("@sendgrid/mail");
+const { Resend } = require("resend");
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (toEmail, files) => {
   try {
-    const msg = {
+    // Safety checks
+    if (!fs.existsSync(files.pdfPath)) {
+      throw new Error("PDF not found: " + files.pdfPath);
+    }
+    if (!fs.existsSync(files.jpgPath)) {
+      throw new Error("Image not found: " + files.jpgPath);
+    }
+
+    await resend.emails.send({
+      from: `Certificate System <${process.env.RESEND_FROM_EMAIL}>`,
       to: toEmail,
-      from: {
-        email: process.env.SENDGRID_FROM_EMAIL,
-        name: "Certificate System",
-      },
       subject: "Your Business Certificate",
       text: "Please find your certificate attached.",
       attachments: [
         {
-          content: fs.readFileSync(files.jpgPath).toString("base64"),
           filename: "certificate.jpg",
-          type: "image/jpeg",
-          disposition: "attachment",
+          content: fs.readFileSync(files.jpgPath),
         },
         {
-          content: fs.readFileSync(files.pdfPath).toString("base64"),
           filename: "certificate.pdf",
-          type: "application/pdf",
-          disposition: "attachment",
+          content: fs.readFileSync(files.pdfPath),
         },
       ],
-    };
+    });
 
-    await sgMail.send(msg);
-    console.log("✅ Email sent successfully via SendGrid");
+    console.log("✅ Email sent successfully via RESEND");
   } catch (error) {
-    console.error("❌ SendGrid Email Error:", error.response?.body || error);
+    console.error("❌ RESEND Email Error:", error.message);
     throw error;
   }
 };

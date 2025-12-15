@@ -4,7 +4,7 @@ const { createCanvas, loadImage, registerFont } = require("canvas");
 const PDFDocument = require("pdfkit");
 
 /* =========================
-   REGISTER FONT (CRITICAL)
+   REGISTER FONT
 ========================= */
 registerFont(
   path.join(__dirname, "../fonts/Roboto-Regular.ttf"),
@@ -54,27 +54,15 @@ async function generateCertificate({
   ctx.fillStyle = "#2b2b2b";
   ctx.textAlign = "center";
 
-  /* =========================
-     NAME
-  ========================= */
   ctx.font = "bold 46px Roboto";
   ctx.fillText(name, width / 2, 340);
 
-  /* =========================
-     BUSINESS NAME
-  ========================= */
   ctx.font = "bold 28px Roboto";
   ctx.fillText(businessName, width / 2, 420);
 
-  /* =========================
-     GST
-  ========================= */
   ctx.font = "22px Roboto";
   ctx.fillText(`GST Number: ${gst}`, width / 2, 460);
 
-  /* =========================
-     ADDRESS
-  ========================= */
   ctx.font = "20px Roboto";
   wrapText(
     ctx,
@@ -85,9 +73,6 @@ async function generateCertificate({
     28
   );
 
-  /* =========================
-     CERTIFICATE NO (LEFT)
-  ========================= */
   ctx.textAlign = "left";
   ctx.font = "18px Roboto";
 
@@ -97,9 +82,6 @@ async function generateCertificate({
   ctx.fillText("Certificate No.", 90, 720);
   ctx.fillText(certificateNo, 90, 745);
 
-  /* =========================
-     ISSUE DATE (RIGHT)
-  ========================= */
   ctx.fillText("Issue Date:", width - 300, 720);
   ctx.fillText(
     new Date().toLocaleDateString("en-IN", {
@@ -112,21 +94,32 @@ async function generateCertificate({
   );
 
   /* =========================
-     SAVE FILES (CLOUD SAFE)
+     SAVE FILES (SAFE)
   ========================= */
-  const outputDir = "/tmp/certificates";
+  const outputDir = path.join(process.cwd(), "tmp", "certificates");
   fs.mkdirSync(outputDir, { recursive: true });
 
   const fileName = `${Date.now()}_${name.replace(/\s+/g, "_")}`;
-  const jpgPath = `${outputDir}/${fileName}.jpg`;
-  const pdfPath = `${outputDir}/${fileName}.pdf`;
+  const jpgPath = path.join(outputDir, `${fileName}.jpg`);
+  const pdfPath = path.join(outputDir, `${fileName}.pdf`);
 
+  // Save JPG
   fs.writeFileSync(jpgPath, canvas.toBuffer("image/jpeg"));
 
-  const doc = new PDFDocument({ size: [width, height] });
-  doc.pipe(fs.createWriteStream(pdfPath));
-  doc.image(jpgPath, 0, 0, { width, height });
-  doc.end();
+  // Save PDF (WAIT for finish)
+  await new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: [width, height] });
+    const stream = fs.createWriteStream(pdfPath);
+
+    doc.pipe(stream);
+    doc.image(jpgPath, 0, 0, { width, height });
+    doc.end();
+
+    stream.on("finish", resolve);
+    stream.on("error", reject);
+  });
+
+  console.log("✅ Certificate files created");
 
   return { jpgPath, pdfPath };
 }

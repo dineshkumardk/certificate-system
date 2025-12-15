@@ -1,9 +1,9 @@
 import { useState } from "react";
 import "./App.css"; // make sure this is imported
 
-// const API_URL = "http://localhost:5000/generate-certificate";
-const API_URL =
-  "https://certificate-system-production-6df7.up.railway.app/generate-certificate";
+const API_URL = "http://localhost:5000/generate-certificate";
+// const API_URL =
+//   "https://certificate-system-production-6df7.up.railway.app/generate-certificate";
 
 export default function CertificateForm() {
   const [formData, setFormData] = useState({
