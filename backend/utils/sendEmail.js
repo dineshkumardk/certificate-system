@@ -1,33 +1,38 @@
-const nodemailer = require("nodemailer");
+const fs = require("fs");
+const sgMail = require("@sendgrid/mail");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendEmail = async (toEmail, files) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // ✅ SSL
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // 16-char app password (NO SPACES)
-      }
-    });
-
-    await transporter.verify(); // must pass
-
-    await transporter.sendMail({
-      from: `"Certificate System" <${process.env.EMAIL_USER}>`,
+    const msg = {
       to: toEmail,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL,
+        name: "Certificate System",
+      },
       subject: "Your Business Certificate",
       text: "Please find your certificate attached.",
       attachments: [
-        { path: files.jpgPath },
-        { path: files.pdfPath }
-      ]
-    });
+        {
+          content: fs.readFileSync(files.jpgPath).toString("base64"),
+          filename: "certificate.jpg",
+          type: "image/jpeg",
+          disposition: "attachment",
+        },
+        {
+          content: fs.readFileSync(files.pdfPath).toString("base64"),
+          filename: "certificate.pdf",
+          type: "application/pdf",
+          disposition: "attachment",
+        },
+      ],
+    };
 
-    console.log("✅ Email sent successfully");
+    await sgMail.send(msg);
+    console.log("✅ Email sent successfully via SendGrid");
   } catch (error) {
-    console.error("❌ Email error:", error);
+    console.error("❌ SendGrid Email Error:", error.response?.body || error);
     throw error;
   }
 };
